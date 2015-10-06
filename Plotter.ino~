@@ -1,5 +1,11 @@
 #include <Stepper.h>
 
+/*
+Adafruit Arduino - Lesson 16. Stepper - modified for scannerStepper with H-Bridge
+*/
+
+#include <Stepper.h>
+
 int YPin1 = 4;
 int YPin2 = 5;
 int YPin3 = 6;
