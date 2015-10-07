@@ -1,10 +1,11 @@
 #include <Stepper.h>
 
+//pins for y-axis stepper
 int YPin1 = 4;
 int YPin2 = 5;
 int YPin3 = 6;
 int YPin4 = 7;
-
+//pins for x-axis stepper
 int XPin1 = 15;
 int XPin2 = 14;
 int XPin3 = 16;
@@ -14,7 +15,7 @@ int xFLB = 2; //Fork light barrier for the x-axis
 //bool stepped = false;
 int steps = 0;
 
-double XmmSt = 0.02108333;
+double XmmSt = 0.02108333; // mm
 double YmmSt = 0.020875;
 
 int cmd_id;
@@ -34,8 +35,8 @@ void setup()
   Serial.begin(9600);
   Serial.println("Hello user");
   
-  XStepper.setSpeed(632);  //Xrpm 1000 max 632,4 BaseSpeed
-  YStepper.setSpeed(626);  //Yrpm 1000 max 626,3 BaseSpeed
+  XStepper.setSpeed(632);  //Xrpm 1000 max.; 632,4 BaseSpeed
+  YStepper.setSpeed(626);  //Yrpm 1000 max.; 626,3 BaseSpeed
   Serial.print("resetting X axis ...");
   resetX();
   Serial.println("[done]");
@@ -119,22 +120,47 @@ void resetX()
 {
   while(!digitalRead(xFLB))
     XStepper.step(-1);
-  digitalWrite(XPin1, LOW);  digitalWrite(XPin2, LOW);  digitalWrite(XPin3, LOW);  digitalWrite(XPin4, LOW);
 }
 
 void schreiteX(int schritte)
 {
   Serial.print(steps); Serial.print(" Schritte ~ "); Serial.print(steps * XmmSt); Serial.print("mm");
-  XStepper.step(schritte);
-  digitalWrite(XPin1, LOW);  digitalWrite(XPin2, LOW);  digitalWrite(XPin3, LOW);  digitalWrite(XPin4, LOW);
+  if (schritte >= 0)
+  {
+    for (int i = 0; i < schritte; i++)
+    {
+      XStepper.step(1);
+    }
+  }
+  else
+  {
+    schritte = schritte * -1;
+    for (int i = 0; i < schritte; i++)
+    {
+      XStepper.step(-1);
+    }
+  }
   Serial.println(" in X-Richtung gemacht");
 }
 
 void schreiteY(int schritte)
 {
   Serial.print(steps); Serial.print(" Schritte ~ "); Serial.print(steps * YmmSt); Serial.print("mm");
-  YStepper.step(schritte);
-  digitalWrite(YPin1, LOW);  digitalWrite(YPin2, LOW);  digitalWrite(YPin3, LOW);  digitalWrite(YPin4, LOW);
+  if (schritte >= 0)
+  {
+    for (int i = 0; i < schritte; i++)
+    {
+      YStepper.step(1);
+    }
+  }
+  else
+  {
+    schritte = schritte * -1;
+    for (int i = 0; i < schritte; i++)
+    {
+      YStepper.step(-1);
+    }
+  }
   Serial.println(" in Y-Richtung gemacht");
 }
 
@@ -145,7 +171,6 @@ void Quadrat(int seitenlaenge)
   XStepper.step(seitenlaenge / XmmSt);
   YStepper.step(seitenlaenge / YmmSt * -1); //rückwärts
   XStepper.step(seitenlaenge / XmmSt * -1); //rückwärts
-  HaltStop();
   Serial.print("Quadrat mit Seitenlaenge von ");  Serial.print(seitenlaenge); Serial.print(" Schritten gezeichnet.");
 }
 
@@ -160,7 +185,6 @@ void Nikolaushaus(int seitenlaenge)
   YStepper.step(seitenlaenge / YmmSt *-1);
   EDiagonale(seitenlaenge / XmmSt);
   YStepper.step(seitenlaenge / YmmSt *-1);
-  HaltStop();
   Serial.print("Nikolaushaus gezeichnet");
 }
 
@@ -184,7 +208,6 @@ void Diagonale(int laenge)
       XStepper.step(-1);
     }
   }
-  HaltStop();
 }
 
 void EDiagonale(int laenge)
@@ -207,13 +230,31 @@ void EDiagonale(int laenge)
       XStepper.step(1);
     }
   }
-  HaltStop();
+  
 }
 
-void HaltStop()
+/*
+ *   /|
+ * c/ | a=seitenlaenge (wird eingegeben (in mm)
+ * /__|   c=hypotenuse (wird gezeichnet
+ *  a
+ */
+
+void exakteDiagonale(int seitenlaenge) //diagonale wie f(x) bisher nur von LinksUnten nach RechtsOben (positiv)
 {
-  digitalWrite(XPin1, LOW);  digitalWrite(XPin2, LOW);  digitalWrite(XPin3, LOW);  digitalWrite(XPin4, LOW);
-  digitalWrite(YPin1, LOW);  digitalWrite(YPin2, LOW);  digitalWrite(YPin3, LOW);  digitalWrite(YPin4, LOW);
+  if (seitenlaenge < 0)
+  {
+    Serial.println("ERROR only positve values are supported (yet) for exact diagonal"); return;
+  }
+  //convert millimeter (from input) to steps (for plotting)
+  int xSteps = seitenlaenge / XmmSt;
+  int ySteps = seitenlaenge / YmmSt;  //sollte groesser sein
+  Serial.print("xSteps: "); Serial.print(xSteps); Serial.print("  ySteps: "); Serial.println(ySteps); //debugging
+  for (int i = 0; i < ySteps; i++)
+  {
+    YStepper.step(1);
+    if( i*10000 % 1012160 == 0)
+      XStepper.step(1);
+  }
 }
-
 
